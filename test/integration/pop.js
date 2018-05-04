@@ -1,10 +1,10 @@
 var mailx = require('../../main.js');
 var popServer = require("pop-server");
 var assert = require('assert');
-var _ = require('underscore');
+var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
-var mailcomposer = require("mailcomposer");
+var mailcomposer = require("nodemailer/lib/mail-composer");
 
 
 var server;
@@ -38,7 +38,8 @@ var options = {
       message.setSubject('hello');
       message.setText('hi ! how are u?');
       message.setHtml('hi ! how are u? <b>hugs</b>');
-      mailcomposer(message).build(cb);
+      var mail = new mailcomposer(message);
+      mail.compile().build(cb);
     },
     removeDeleted: function(deleted, cb) {
       deleted.forEach(function(uid) {
