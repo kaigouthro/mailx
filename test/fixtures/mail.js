@@ -3,7 +3,7 @@ var asynk = require('asynk');
 var _ = require('lodash');
 
 var mails = {
-  inbox: [
+  INBOX: [
     {
       from: {name: 'me', address: 'me@localhost'},
       to: {name: 'you', address: 'you@localhost'},
@@ -23,7 +23,7 @@ var mails = {
       text: 'text3'
     }
   ],
-  outbox: [
+  OUTBOX: [
     {
       from: {name: 'me', address: 'me@localhost'},
       to: {name: 'you', address: 'you@localhost'},
@@ -49,16 +49,16 @@ var mails = {
       text: 'text7'
     }
   ],
-  beatbox: [
+  BEATBOX: [
     {
       from: {name: 'me', address: 'me@localhost'},
-      to: {name: 'you', address: 'you@localhost'},
+      to: {name: 'you', address: 'test@localhost'},
       subject: 'subject8',
       text: 'text8'
     },
     {
       from: {name: 'me', address: 'me@localhost'},
-      to: {name: 'you', address: 'you@localhost'},
+      to: {name: 'you', address: 'test@localhost'},
       subject: 'subject9',
       text: 'text9'
     }
@@ -66,28 +66,32 @@ var mails = {
 };
 
 module.exports = {
-  fillMails: function(boxNames, cb) {
+  fillMails: function(boxNames, transport, store, cb) {
+    // return cb();
     var self = this;
     if (_.isString(boxNames)) {
       boxNames = [boxNames];
     }
-    var transport = mailx.transport('172.18.0.10', 2525);
-    var store = mailx.store('imap', '172.18.0.10', 143, 'test', 'pass');
     store.connect(function(err) {
       if (err) {
         return cb(err);
       }
       asynk.each(boxNames, function(boxName, callback) {
         self.fillBox(transport, store, boxName, callback);
-      }).serie().fail(cb).done(cb);
+      }).serie().asCallback(function(err) {
+        if (err) {
+          return cb(err);
+        }
+        store.close(cb);
+      });
     });
   },
 
   fillBox: function(transport, store, boxName, cb) {
-    if (!mails[boxName.toLowerCase()]) {
+    if (!mails[boxName]) {
       return cb(new Error('Unknown box : ' + boxName));
     }
-    asynk.each(mails[boxName.toLowerCase()], function(mail, callback) {
+    asynk.each(mails[boxName], function(mail, callback) {
       var message = mailx.message();
       message.setFrom(mail.from.name, mail.from.address);
       message.addTo(mail.to.name, mail.to.address);
@@ -97,30 +101,61 @@ module.exports = {
         if (err) {
           return callback(err);
         }
-        callback();
+        setTimeout(function() {
+          callback();
+        }, 100);
       });
     }).serie().fail(cb).done(function() {
-      store.openBox(boxName, function(err) {
-        if (err) {
-          return cb(err);
+      var flag = false;
+
+      var check = function(ok) {
+        if (ok) {
+          store.move('1:*', boxName, 'INBOX', function(err) {
+            if (err) {
+              return cb(err);
+            }
+            return cb();
+          });
+        } else {
+          store.getInboxMessages(1, function(err, messages) {
+            if (err) {
+              return cb(err);
+            }
+            if (messages && messages.length === mails[boxName].length) {
+              return check(true);
+            }
+            if (messages && messages.length > mails[boxName].length) {
+              return cb(new Error('Too many mails in box (probably remnants from previous tests). AfterEach() should clean it, just restart the tests'));
+            }
+            check();
+          });
         }
-        store.move('*', boxName, function(err) {
+      };
+      if (store.constructor && store.constructor.name === 'PopStore') {
+        store.close(function(err) {
           if (err) {
             return cb(err);
           }
-          return cb();
+          setTimeout(function() {
+            store.connect(function(err) {
+              if (err) {
+                return cb(err);
+              }
+              check();
+            });
+          }, 1000);
         });
-      });
+      } else {
+        check();
+      }
     });
   },
 
-  emptyMails: function(boxNames, cb) {
+  emptyMails: function(boxNames, transport, store, cb) {
     var self = this;
     if (_.isString(boxNames)) {
       boxNames = [boxNames];
     }
-    var transport = mailx.transport('172.18.0.10', 2525);
-    var store = mailx.store('imap', '172.18.0.10', 143, 'test', 'pass');
     store.connect(function(err) {
       if (err) {
         return cb(err);
@@ -130,9 +165,19 @@ module.exports = {
           if (err) {
             return callback(err);
           }
-          store.deleteMessage('*', callback);
+          store.deleteMessage('1:*', function(err) {
+            if (err) {
+              return callback(err);
+            }
+            store.expunge(callback);
+          });
         });
-      }).serie().fail(cb).done(cb);
+      }).serie().asCallback(function(err) {
+        if (err) {
+          return cb(err);
+        }
+        store.close(cb);
+      });
     });
   },
 }
