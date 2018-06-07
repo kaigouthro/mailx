@@ -7,9 +7,11 @@ var test = new mocha({
   timeout: 2000
 });
 
-test.addFile(path.join(__dirname, 'smtp.js'));
-test.addFile(path.join(__dirname, 'imap.js'));
-test.addFile(path.join(__dirname, 'pop.js'));
+// test.addFile(path.join(__dirname, 'smtp.js'));
+// test.addFile(path.join(__dirname, 'imap.js'));
+// test.addFile(path.join(__dirname, 'pop.js'));
+test.addFile(path.join(__dirname, 'mail-parser-test.js'));
+test.addFile(path.join(__dirname, 'simple-parser-test.js'));
 
 var runner = test.run(function(err) {
   if (err) {

@@ -26,10 +26,17 @@
     "asynk": "~0.0.12",
     "imap": "~0.8.19",
     "lodash": "4.17.2",
-    "mailparser": "~2.2.3",
-    "nodemailer": "~4.6.4",
+    "nodemailer": "~4.6.5",
     "optimist": "~0.6.1",
-    "streamize": "~0.0.1"
+    "streamize": "~0.0.1",
+    "addressparser": "1.0.1",
+    "he": "^1.1.1",
+    "html-to-text": "3.3.0",
+    "iconv-lite": "0.4.19",
+    "libmime": "3.1.0",
+    "linkify-it": "2.0.3",
+    "mailsplit": "4.1.2",
+    "tlds": "1.199.0"
   },
   "devDependencies": {
     "coveralls": "^3.0.0",
@@ -37,10 +44,12 @@
     "hoodiecrow-imap": ">=2.1.0",
     "istanbul": "0.4.5",
     "mocha": "~5.1.1",
-    "nodemailer": "~4.6.4",
     "nyc": "~11.4.1",
     "pop-server": "~0.0.1",
-    "smtp-server": ">=1.14.2"
+    "smtp-server": ">=1.14.2",
+    "libbase64": "~1.0.2",
+    "libqp": "~1.1.0",
+    "random-message": "~1.1.0"
   },
   "readmeFilename": "README.md",
   "bugs": {
