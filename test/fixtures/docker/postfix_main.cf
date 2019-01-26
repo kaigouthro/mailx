@@ -1,0 +1,61 @@
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+
+# Debian specific:  Specifying a file name will cause the first
+# line of that file to be used as the name.  The Debian default
+# is /etc/mailname.
+myorigin = localhost
+
+smtpd_banner = $myhostname ESMTP $mail_name (Centos)
+biff = no
+
+smtpd_milters		= inet:127.0.0.1:8893
+non_smtpd_milters	= $smtpd_milters
+milter_default_action	= accept
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+# information on enabling SSL in the smtp client.
+
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+myhostname = localhost
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+mydestination = localhost
+relayhost =
+mynetworks = 172.18.0.0/16
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+virtual_alias_maps = static:root
+smtpd_tls_auth_only=no
+virtual_transport = incoming
+local_transport = incoming
+
+
+
+# Anti-SPAM rules adapted from https://wiki.debian.org/Postfix
+smtpd_recipient_restrictions = permit_sasl_authenticated,
+        reject_unknown_recipient_domain,
+        reject_unauth_destination,
+        reject_rbl_client sbl.spamhaus.org,
+        permit
+smtpd_helo_restrictions = reject_non_fqdn_helo_hostname
+smtpd_client_restrictions = reject_rbl_client dnsbl.sorbs.net
+
+# Mail will be stored in users' ~/Maildir directories
+#
+# NB: make sure to enforce this setting as well in the `mail_location`
+# of /etc/dovecot/conf.d/10-mail.conf (thanks to Markus Hoffmann for
+# pointing this out):
+#
+#    mail_location = maildir:~/Maildir
+#
+home_mailbox = Maildir/
